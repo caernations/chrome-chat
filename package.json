@@ -1,0 +1,33 @@
+{
+  "name": "chrome-chat-extension",
+  "version": "1.0.0",
+  "description": "Chrome extension with floating AI chat powered by Fireworks AI",
+  "scripts": {
+    "build": "tsc && esbuild src/platform/background.ts --bundle --outfile=dist/platform/background.js --format=iife --platform=browser --target=es2022 && esbuild src/platform/popup.ts --bundle --outfile=dist/platform/popup.js --format=esm --platform=browser --target=es2022 && esbuild src/platform/options.ts --bundle --outfile=dist/platform/options.js --format=esm --platform=browser --target=es2022",
+    "watch": "tsc --watch",
+    "lint": "eslint src --ext .ts,.tsx",
+    "lint:fix": "eslint src --ext .ts,.tsx --fix",
+    "format": "prettier --write src/**/*.{ts,tsx}",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "e2e": "playwright test",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.254",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "esbuild": "^0.25.9",
+    "eslint": "^8.56.0",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-promise": "^6.1.1",
+    "playwright": "^1.40.0",
+    "prettier": "^3.2.4",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.0",
+    "zod": "^3.22.4"
+  },
+  "dependencies": {
+    "zod": "^3.22.4"
+  }
+}
