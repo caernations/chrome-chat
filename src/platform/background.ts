@@ -5,12 +5,14 @@ import { FireworksClient } from '../adapters/fireworks/client.js';
 import { ConsoleLogger } from '../shared/logger/console-logger.js';
 import { SendMessageUseCase } from '../usecases/send-message.js';
 import { StopStreamUseCase } from '../usecases/stop-stream.js';
-import { LoadHistoryUseCase, ClearHistoryUseCase } from '../usecases/manage-history.js';
+import { LoadHistoryUseCase, ClearHistoryUseCase, DeduplicateHistoryUseCase } from '../usecases/manage-history.js';
 import { ConfigurationError } from '../domain/errors.js';
+import { ChatMessage } from '../domain/message.js';
 import { 
   MessageType, 
   RuntimeMessage, 
   SendMessageRequest,
+  SaveUserMessageRequest,
   StopStreamRequest,
   OpenFloatingRequest,
   CloseFloatingRequest,
@@ -33,6 +35,7 @@ class BackgroundService {
   constructor() {
     this.runtime.onMessage(this.handleMessage.bind(this));
     this.setupActionHandler();
+    this.deduplicateHistoryOnStartup();
     this.logger.info('Background service initialized');
   }
 
@@ -55,6 +58,10 @@ class BackgroundService {
         case MessageType.SEND_MESSAGE:
           await this.handleSendMessage(message as SendMessageRequest, sender);
           return;
+        
+        case MessageType.SAVE_USER_MESSAGE:
+          await this.handleSaveUserMessage(message as SaveUserMessageRequest);
+          return { success: true };
         
         case MessageType.STOP_STREAM:
           await this.handleStopStream(message as StopStreamRequest);
@@ -206,6 +213,22 @@ class BackgroundService {
     await clearHistoryUseCase.execute();
   }
 
+  private async handleSaveUserMessage(request: SaveUserMessageRequest): Promise<void> {
+    try {
+      const existingHistory = await this.localStorage.get<ChatMessage[]>('chat-history') || [];
+      const newHistory = [...existingHistory, request.payload].slice(-100);
+      await this.localStorage.set('chat-history', newHistory);
+    } catch (error) {
+      this.logger.error('Failed to save user message', error instanceof Error ? error : undefined);
+      throw error;
+    }
+  }
+
+  private async deduplicateHistoryOnStartup(): Promise<void> {
+    const deduplicateUseCase = new DeduplicateHistoryUseCase(this.localStorage, this.logger);
+    await deduplicateUseCase.execute();
+  }
+
   private async openFloatingChat(): Promise<void> {
     if (this.floatingWindowId) {
       try {
@@ -260,15 +283,17 @@ class BackgroundService {
   private async openPopupWindow(): Promise<void> {
     const window = await this.runtime.openWindow({
       url: chrome.runtime.getURL('popup.html'),
-      type: 'popup',
+      type: 'normal', 
       width: 420,
       height: 560,
       focused: true,
+      left: screen.width - 440,
+      top: 100,
     });
 
     if (window.id) {
       this.floatingWindowId = window.id;
-      this.logger.info('Popup window opened', { windowId: window.id });
+      this.logger.info('Chat window opened', { windowId: window.id });
     }
   }
 

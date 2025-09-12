@@ -41,3 +41,39 @@ export class ClearHistoryUseCase {
     }
   }
 }
+
+export class DeduplicateHistoryUseCase {
+  constructor(
+    private readonly storage: StoragePort,
+    private readonly logger: Logger
+  ) {}
+
+  async execute(): Promise<void> {
+    try {
+      const history = await this.storage.get<ChatMessage[]>('chat-history') || [];
+      const deduplicatedHistory = this.deduplicateMessages(history);
+      
+      if (deduplicatedHistory.length !== history.length) {
+        await this.storage.set('chat-history', deduplicatedHistory);
+        this.logger.info(`Deduplicated history: ${history.length} -> ${deduplicatedHistory.length} messages`);
+      }
+    } catch (error) {
+      this.logger.error(
+        'Failed to deduplicate chat history',
+        error instanceof Error ? error : undefined
+      );
+    }
+  }
+
+  private deduplicateMessages(messages: ChatMessage[]): ChatMessage[] {
+    const seen = new Set<string>();
+    return messages.filter(message => {
+      const key = `${message.role}-${message.content}-${message.timestamp}`;
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    });
+  }
+}

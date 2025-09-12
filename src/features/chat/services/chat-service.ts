@@ -20,6 +20,15 @@ export class ChatService {
 
     this.store.dispatch({ type: 'MESSAGE_ADDED', payload: userMessage });
 
+    try {
+      await chrome.runtime.sendMessage({
+        type: MessageType.SAVE_USER_MESSAGE,
+        payload: userMessage
+      });
+    } catch (error) {
+      this.logger.error('Failed to save user message', error instanceof Error ? error : undefined);
+    }
+
     const messages = [...this.store.getState().messages, userMessage];
     const chatParams: ChatParams = {
       model: params.model || 'accounts/fireworks/models/llama-v3p1-70b-instruct',

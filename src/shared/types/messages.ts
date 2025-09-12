@@ -2,6 +2,7 @@ import { ChatMessage, ChatParams, StreamDelta } from '../../domain/message.js';
 
 export const MessageType = {
   SEND_MESSAGE: 'SEND_MESSAGE',
+  SAVE_USER_MESSAGE: 'SAVE_USER_MESSAGE',
   STREAM_DELTA: 'STREAM_DELTA',
   STREAM_END: 'STREAM_END',
   STREAM_ERROR: 'STREAM_ERROR',
@@ -70,8 +71,14 @@ export interface GetHistoryRequest {
   type: typeof MessageType.GET_HISTORY;
 }
 
+export interface SaveUserMessageRequest {
+  type: typeof MessageType.SAVE_USER_MESSAGE;
+  payload: ChatMessage;
+}
+
 export type RuntimeMessage =
   | SendMessageRequest
+  | SaveUserMessageRequest
   | StreamDeltaMessage
   | StreamEndMessage
   | StreamErrorMessage

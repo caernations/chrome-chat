@@ -19,12 +19,22 @@ export class SendMessageUseCase {
       throw new ConfigurationError('No messages provided');
     }
 
-    try {
-      await this.saveToHistory(messages);
+    let assistantContent = '';
 
+    try {
       for await (const delta of this.chatGateway.startStream(messages, params)) {
+        assistantContent += delta.content;
         yield delta;
       }
+
+      const assistantMessage: ChatMessage = {
+        id: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+        role: 'assistant',
+        content: assistantContent,
+        timestamp: Date.now(),
+      };
+
+      await this.saveAssistantMessage(assistantMessage);
     } catch (error) {
       this.logger.error(
         'Failed to send message',
@@ -34,14 +44,14 @@ export class SendMessageUseCase {
     }
   }
 
-  private async saveToHistory(messages: ChatMessage[]): Promise<void> {
+  private async saveAssistantMessage(message: ChatMessage): Promise<void> {
     try {
       const existingHistory = await this.storage.get<ChatMessage[]>('chat-history') || [];
-      const newHistory = [...existingHistory, ...messages].slice(-100);
+      const newHistory = [...existingHistory, message].slice(-100);
       await this.storage.set('chat-history', newHistory);
     } catch (error) {
       this.logger.warn(
-        'Failed to save to history',
+        'Failed to save assistant message to history',
         error instanceof Error ? error : undefined
       );
     }

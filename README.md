@@ -1,8 +1,6 @@
 # AI Chat Assistant - Chrome Extension
 
-![CI Status](https://github.com/yourusername/chrome-chat/actions/workflows/ci.yml/badge.svg)
-
-A production-grade Chrome Extension (MV3) that provides a **floating, always-on-top chat interface** powered by **Fireworks AI** with Llama models. Built with clean architecture principles, TypeScript, and comprehensive testing.
+A Chrome Extension (MV3) that provides a **floating, always-on-top chat interface** powered by **Fireworks AI** with Llama models. Built with clean architecture principles, TypeScript, and comprehensive testing.
 
 ## Features
 

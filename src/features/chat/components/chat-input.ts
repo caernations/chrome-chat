@@ -11,6 +11,7 @@ export class ChatInput {
   private stopButton: HTMLButtonElement;
   private container: HTMLElement;
   private options: ChatInputOptions;
+  private lastSendTime = 0;
 
   constructor(container: HTMLElement, options: ChatInputOptions = {}) {
     this.container = container;
@@ -79,8 +80,14 @@ export class ChatInput {
   }
 
   private handleSend(): void {
+    const now = Date.now();
+    if (now - this.lastSendTime < 500) {
+      return;
+    }
+    this.lastSendTime = now;
+    
     const content = this.textarea.value.trim();
-    if (content && this.options.onSend) {
+    if (content && this.options.onSend && !this.textarea.disabled) {
       this.options.onSend(content);
       this.clear();
     }

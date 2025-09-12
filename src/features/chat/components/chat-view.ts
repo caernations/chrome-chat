@@ -108,15 +108,11 @@ export class ChatView {
     });
 
     minimizeButton?.addEventListener('click', () => {
-      if (!this.isPinned) {
-        window.blur();
-      }
+      this.minimizeWindow();
     });
 
     closeButton?.addEventListener('click', () => {
-      if (!this.isPinned) {
-        window.close();
-      }
+      this.closeWindow();
     });
 
     const errorClose = this.container.querySelector('.chat-error__close') as HTMLButtonElement;
@@ -204,25 +200,55 @@ export class ChatView {
     if (this.isPinned) {
       pinButton?.classList.add('chat-header__pin--active');
       pinButton?.setAttribute('aria-label', 'Unpin chat window');
-      // Open floating window when pinned
-      this.openFloatingWindow();
+      this.updateWindowState();
     } else {
       pinButton?.classList.remove('chat-header__pin--active');
       pinButton?.setAttribute('aria-label', 'Pin chat window');
+      this.updateWindowState();
     }
   }
 
-  private async openFloatingWindow(): Promise<void> {
+  private async updateWindowState(): Promise<void> {
     try {
-      await chrome.runtime.sendMessage({
-        type: 'OPEN_FLOATING'
-      });
-      // Close the popup after opening floating window
-      setTimeout(() => {
-        window.close();
-      }, 100);
+      const currentWindow = await chrome.windows.getCurrent();
+      if (currentWindow.id) {
+        if (this.isPinned) {
+          chrome.windows.update(currentWindow.id, { focused: true });
+        }
+      }
     } catch (error) {
-      console.error('Failed to open floating window:', error);
+    }
+  }
+
+  private async minimizeWindow(): Promise<void> {
+    try {
+      const currentWindow = await chrome.windows.getCurrent();
+      if (currentWindow.id) {
+        await chrome.windows.update(currentWindow.id, { state: 'minimized' });
+      }
+    } catch (error) {
+      try {
+        const currentWindow = await chrome.windows.getCurrent();
+        if (currentWindow.id) {
+          chrome.windows.update(currentWindow.id, { focused: false });
+        }
+      } catch {
+      }
+    }
+  }
+
+  private async closeWindow(): Promise<void> {
+    if (this.isPinned) {
+      this.minimizeWindow();
+    } else {
+      try {
+        const currentWindow = await chrome.windows.getCurrent();
+        if (currentWindow.id) {
+          await chrome.windows.remove(currentWindow.id);
+        }
+      } catch (error) {
+        window.close();
+      }
     }
   }
 
